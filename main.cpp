@@ -32,70 +32,6 @@ std::string display_correctly(std::uintmax_t value) {
     return strValue + "" + tag;
 }
 
-
-void scan_task(fs::path const& path, std::unordered_map<fs::path, std::uintmax_t>& memo_sizes, ThreadPool& pool) {
-    std::error_code ec;
-    try {
-        std::uintmax_t memo_sizes_local = 0;
-        auto it = fs::directory_iterator(path);
-        while (it != fs::directory_iterator{}) {
-
-            const auto& file = *it;
-
-            if( excludes.count(file.path().filename().string()) ) {
-                it.increment(ec);
-                if(!ec) continue; else {
-                    return;
-                }
-            }
-
-
-            if(file.is_regular_file()) memo_sizes_local += file.file_size();
-            //I need help with the lambda sent to submit for sure.
-            if(file.is_directory()) {
-                pool.submit([child = file.path(), &memo_sizes, &pool]() { scan_task(child, memo_sizes, pool); });
-            }
-
-            it.increment(ec);
-            if(!ec) continue; else return;
-        }
-
-        {
-            std::unique_lock<std::mutex> lock(sizes_mutex);
-            memo_sizes[path] = memo_sizes_local;
-        }
-
-    }
-    catch(const fs::filesystem_error& e) {
-        return;
-    }
-}
-
-void rollup_sizes(std::unordered_map<fs::path, std::uintmax_t>& memo_sizes) {
-
-    std::vector<fs::path> local_paths;
-    for(auto& [key, value] : memo_sizes) {
-        local_paths.push_back(key);
-    }
-    std::sort(local_paths.begin(), local_paths.end(), [](const auto& a, const auto& b) {
-        return std::distance(a.begin(), a.end()) > std::distance(b.begin(), b.end());
-    });
-
-    for(auto& path : local_paths) {
-        fs::path par = path.parent_path();
-
-        {
-            std::unique_lock<std::mutex> lock(sizes_mutex);
-            if(memo_sizes.count(par)) {
-                memo_sizes[par] += memo_sizes[path];
-            }
-        }
-
-    }
-
-}
-
-
 int main(int argc, char* argv[]) {
 
     fs::path path;
@@ -119,7 +55,6 @@ int main(int argc, char* argv[]) {
         thread_pool.wait_idle();
         rollup_sizes(memo_sizes);
 
-        //total_size_of(path, memo_sizes);
 
         BiggestEntry winner;
         winner = biggest_child_of(path, memo_sizes);
