@@ -1,4 +1,3 @@
-#include "filesize.h"
 #include "report.h"
 #include "threadpool.h"
 #include <iostream>
@@ -24,7 +23,6 @@ std::string display_correctly(std::uintmax_t value) {
         value = static_cast<double>(value) / KB;
         tag = "KB";
     } else {
-        value = value;
         tag = "bytes";
     }
 
