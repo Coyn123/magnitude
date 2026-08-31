@@ -30,6 +30,11 @@ BiggestEntry biggest_child_of(fs::path const& path, std::unordered_map<fs::path,
                 if(!ec) continue; else return curEntry;
             }
 
+            if(curFile.is_symlink()) {
+                it.increment(ec);
+                if(!ec) continue; else return curEntry;
+            }
+
             if(curFile.is_directory()) curSize = memo_sizes[curFile.path()];
             if(curFile.is_regular_file()) curSize = curFile.file_size();
             if (curSize > running_largest) {
@@ -74,7 +79,7 @@ std::vector<std::pair<fs::path, std::uintmax_t>> top_level_sizes(fs::path const&
 
         while ( it != fs::directory_iterator{} ) {
             const auto& pointer = *it;
-            if (pointer.is_directory()) {
+            if (pointer.is_directory() && !pointer.is_symlink()) {
                 printTree.push_back({pointer.path(), memo_sizes[pointer.path()]});
             }
             it.increment(ec);
@@ -106,6 +111,11 @@ void scan_task(fs::path const& path, std::unordered_map<fs::path, std::uintmax_t
                 }
             }
 
+
+            if(file.is_symlink()) {
+                it.increment(ec);
+                if(!ec) continue; else return;
+            }
 
             if(file.is_regular_file()) memo_sizes_local += file.file_size();
             if(file.is_directory()) {
