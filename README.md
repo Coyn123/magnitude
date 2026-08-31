@@ -8,6 +8,8 @@ https://coyner-ne.blogspot.com/2026/08/magnitude-c-disk-space-tool-built-to.html
 
 Requires a C++17 compiler with `<filesystem>` and `<thread>` support (tested with g++ via MSYS2 UCRT64 on Windows).
 
+Alternatively, download the v1.0.0 GitHub build on the side of the page
+
 ```bash
 g++ -std=c++17 -Wall -Wextra -static main.cpp filesize.cpp report.cpp threadpool.cpp -o magnitude.exe
 ```
