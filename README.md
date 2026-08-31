@@ -2,6 +2,8 @@
 
 A small C++ tool for finding what's eating your disk space. Scans a directory (multithreaded), traces the single heaviest folder chain down to the largest file inside it, then lists every top-level folder's size for a full breakdown.
 
+https://coyner-ne.blogspot.com/2026/08/magnitude-c-disk-space-tool-built-to.html
+
 ## Build
 
 Requires a C++17 compiler with `<filesystem>` and `<thread>` support (tested with g++ via MSYS2 UCRT64 on Windows).
