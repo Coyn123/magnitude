@@ -3,11 +3,14 @@
 #include <unordered_map>
 #include <unordered_set>
 #include <string>
+#include <mutex>
 namespace fs = std::filesystem;
 
 constexpr std::uintmax_t KB = 1024;
 constexpr std::uintmax_t MB = KB * 1024;
 constexpr std::uintmax_t GB = MB * 1024;
+
+extern std::mutex sizes_mutex;
 
 const std::unordered_set<std::string> excludes = {
     "System Volume Information",

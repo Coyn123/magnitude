@@ -1,9 +1,13 @@
 #include "filesize.h"
 #include <iostream>
+#include <mutex>
+
+std::mutex sizes_mutex;
 
 std::uintmax_t total_size_of(fs::path const& path, std::unordered_map<fs::path, std::uintmax_t>& memo_sizes) {
     std::error_code ec;
     std::uintmax_t running_size = 0;
+
 
     try {
 
@@ -15,21 +19,36 @@ std::uintmax_t total_size_of(fs::path const& path, std::unordered_map<fs::path, 
             //is the file name in excludes? (filesize.h)
             if( excludes.count(file.path().filename().string()) ) {
                 it.increment(ec);
-                if(!ec) continue; else return memo_sizes[path] = running_size;
+                if(!ec) continue; else {
+                    {
+                        std::lock_guard<std::mutex> lock(sizes_mutex);
+                        return memo_sizes[path] = running_size;
+                    }
+                }
             }
 
             if ( file.is_regular_file() ) { running_size += file.file_size(); }
             if ( file.is_directory() ) { std::uintmax_t recur = total_size_of(file.path(), memo_sizes); running_size += recur; }
             it.increment(ec);
-            if(!ec) continue; else return memo_sizes[path] = running_size;
+            if(!ec) continue; else {
+                {
+                    std::lock_guard<std::mutex> lock(sizes_mutex);
+                    return memo_sizes[path] = running_size;
+                }
+            }
         }
-
-        return memo_sizes[path] = running_size;
+        {
+            std::lock_guard<std::mutex> lock(sizes_mutex);
+            return memo_sizes[path] = running_size;
+        }
     }
 
     catch (const fs::filesystem_error& e) {
         //std::cout << e.what() << std::endl;
-        return memo_sizes[path] = running_size;
+        {
+            std::lock_guard<std::mutex> lock(sizes_mutex);
+            return memo_sizes[path] = running_size;
+        }
     }
 }
 
