@@ -40,7 +40,15 @@ int main(int argc, char* argv[]) {
 
 
     try {
-
+        //
+        // Important init order:
+        // memo_sizes must be instantiated before ThreadPool
+        // The deconstructors process may tear down memo_sizes before
+        // ThreadPool workers have finished their read/writes
+        // Compiler deconstructor order is reverse relative to
+        // instantiation order. Memo_sizes must tear down last,
+        // it is the shared read/write memo-ization.
+        //
         std::unordered_map<fs::path, std::uintmax_t> memo_sizes;
         std::vector<std::future<std::uintmax_t>> futures;
 

@@ -107,6 +107,10 @@ void scan_task(fs::path const& path, std::unordered_map<fs::path, std::uintmax_t
             if( excludes.count(file.path().filename().string()) ) {
                 it.increment(ec);
                 if(!ec) continue; else {
+                    {
+                        std::unique_lock<std::mutex> lock(sizes_mutex);
+                        memo_sizes[path] = memo_sizes_local;
+                    }
                     return;
                 }
             }
@@ -114,7 +118,13 @@ void scan_task(fs::path const& path, std::unordered_map<fs::path, std::uintmax_t
 
             if(file.is_symlink()) {
                 it.increment(ec);
-                if(!ec) continue; else return;
+                if(!ec) continue; else {
+                    {
+                        std::unique_lock<std::mutex> lock(sizes_mutex);
+                        memo_sizes[path] = memo_sizes_local;
+                    }
+                    return;
+                }
             }
 
             if(file.is_regular_file()) memo_sizes_local += file.file_size();
@@ -123,7 +133,13 @@ void scan_task(fs::path const& path, std::unordered_map<fs::path, std::uintmax_t
             }
 
             it.increment(ec);
-            if(!ec) continue; else return;
+            if(!ec) continue; else {
+                {
+                    std::unique_lock<std::mutex> lock(sizes_mutex);
+                    memo_sizes[path] = memo_sizes_local;
+                }
+                return;
+            }
         }
 
         {
